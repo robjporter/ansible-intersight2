@@ -1,0 +1,53 @@
+- name: Main
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    data_file: "config/default.yml"
+    vault_file: "data/vault.yml"
+    api_info: &api_info
+      api_private_key: "data/secret.txt" # "{{ vault_secret_key }}"
+      api_key_id: "{{ vault_api_key }}"
+      api_uri: "{{ intersight_url | default(omit) }}"
+
+  pre_tasks:
+    - name: Include vault data
+      ansible.builtin.include_vars: "{{ vault_file }}"
+      tags: ["always"]
+    - name: Load data
+      ansible.builtin.include_vars: "{{ data_file }}"
+      tags: ["always"]
+    - name: Set API info
+      ansible.builtin.set_fact:
+        api_info: "{{ api_info }}"
+      tags: ["always"]
+    - name: Set Configuration data
+      ansible.builtin.set_fact:
+        data: "{{ Intersight }}"
+      tags: ["always"]
+    - name: Set Config data
+      ansible.builtin.set_fact:
+        config: "{{ config }}"
+      tags: ["always"]
+
+  tasks:
+    - name: Get info for servers by name
+      cisco.intersight.intersight_info:
+        <<: *api_info
+        server_names:
+      register: server_names
+    - name: Build Server Output
+      vars:
+        output: ""
+      ansible.builtin.set_fact:
+        output: "{{ output }}{{ item.Name }}\t{{ item.Moid }}\n"
+      loop: "{{ server_names.intersight_servers }}"
+      register: output
+    # - name: Debug output
+    #   ansible.builtin.debug:
+    #     msg: "server name {{ item.Name }}, moid {{ item.Moid }}"
+    #   loop: "{{ server_names.intersight_servers }}"
+    - debug:
+        msg: "some\tfields\tin\ttable\nfoo\tbar\tbaz\tqux"
+    - debug:
+        msg: "{{ output }}"

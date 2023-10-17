@@ -1,0 +1,24 @@
+---
+# Intersight
+intersight_url: 'https://intersight.com/api/v1'
+
+config:
+  # Customer
+  customer_name: &name 'Cisco'
+  customer_prefix: 'RP'
+  customer_description: 'Resource created by Ansible - roporter'
+  customer_default_tags:
+    [
+      { 'Key': 'Site', 'Value': 'BedfontIO' },
+      { 'Key': 'Customer', 'Value': *name },
+      { 'Key': 'Environment', 'Value': 'Development' }
+    ]
+  # Intersight
+  intersight_organization: 'default'
+  # WebEx
+  webex_message: 'TESTING'
+  webex_roomId: 'Y2lzY29zcGFyazovL3VzL1JPT00vYjhmYzg3MzAtMDQyMi0xMWVkLWEyZTMtYzVlOTVhOTE3M2Iw'
+  webex_token: 'MWVhMzI0YWYtNjQxYS00MWRkLTg3ZGQtZDRhMTlmMDI0NDNhMTY4ZWYzNWMtM2Uy_PF84_1eb65fdf-9643-417f-9974-ad72cae0e10f'
+
+# Config
+Intersight:
