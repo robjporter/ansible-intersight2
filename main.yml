@@ -3,51 +3,52 @@
   connection: local
   gather_facts: false
   vars:
-    data_file: "config/default.yml"
-    vault_file: "data/vault.yml"
+    data_file: config/default.yml
+    vault_file: data/vault.yml
+    intersight_review: {}
     api_info: &api_info
-      api_private_key: "data/secret.txt" # "{{ vault_secret_key }}"
+      api_private_key: data/secret.txt
       api_key_id: "{{ vault_api_key }}"
       api_uri: "{{ intersight_url | default(omit) }}"
 
   pre_tasks:
     - name: Include vault data
       ansible.builtin.include_vars: "{{ vault_file }}"
-      tags: ["always"]
+      tags: always
     - name: Load data
       ansible.builtin.include_vars: "{{ data_file }}"
-      tags: ["always"]
+      tags: always
     - name: Set API info
       ansible.builtin.set_fact:
         api_info: "{{ api_info }}"
-      tags: ["always"]
+      tags: always
     - name: Set Configuration data
       ansible.builtin.set_fact:
         data: "{{ Intersight }}"
-      tags: ["always"]
+      tags: always
     - name: Set Config data
       ansible.builtin.set_fact:
         config: "{{ config }}"
-      tags: ["always"]
+      tags: always
 
   tasks:
     - name: Get info for servers by name
       cisco.intersight.intersight_info:
         <<: *api_info
-        server_names:
+        server_names: []
       register: server_names
+    - name: Initialize an empty dictionary
+      set_fact:
+        server_output: {}
     - name: Build Server Output
-      vars:
-        output: ""
       ansible.builtin.set_fact:
-        output: "{{ output }}{{ item.Name }}\t{{ item.Moid }}\n"
+        server_output: "{{ server_output | combine({item.Name: item.Moid}) }}"
       loop: "{{ server_names.intersight_servers }}"
-      register: output
-    # - name: Debug output
-    #   ansible.builtin.debug:
-    #     msg: "server name {{ item.Name }}, moid {{ item.Moid }}"
-    #   loop: "{{ server_names.intersight_servers }}"
+    - name: Update intersight_review server details
+      set_fact:
+        intersight_review: "{{ intersight_review | combine({'server': {'servers': server_output}}, recursive=True) }}"
+    - name: Update intersight_review server count
+      set_fact:
+        intersight_review: "{{ intersight_review | combine({'server': {'count': server_names.intersight_servers | length}}, recursive=True) }}"
     - debug:
-        msg: "some\tfields\tin\ttable\nfoo\tbar\tbaz\tqux"
-    - debug:
-        msg: "{{ output }}"
+        msg: "{{ intersight_review }}"
