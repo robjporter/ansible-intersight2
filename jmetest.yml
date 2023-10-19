@@ -1,0 +1,44 @@
+---
+- name: The JMESPATH Tutorial with Ansible and community.general.json_query
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+
+  tasks:
+
+    - name: A simple playbook showing the JMESPATH Tutorial in Ansible with community.general.json_query
+      debug:
+        msg:
+          - "Tutorial Home Page: https://jmespath.org/tutorial.html"
+          - "Early examples use a simple `json_query(expression)`"
+          - "Later examples use a simple `json_query(jmesquery)` syntax with the expression being a var"
+
+
+    - name: "Example 1 returning the value of 'a' Expression:  {{ '{{' }} example_01 | community.general.json_query('a') {{ '}}' }}"
+      debug:
+        msg:
+          - "The var:         example_01: {{ example_01 }}" 
+          - "The expression:  {{ '{{' }} example_01 | community.general.json_query('a') {{ '}}' }}"
+          - "The result:      {{ example_01 | community.general.json_query('a') }}"
+      vars:
+        example_01: {"a": "foo", "b": "bar", "c": "baz"}
+
+    - name: Basic Expressions 'a.b.c.d'
+      debug:
+        msg:
+          - "The var:         example_02: {{ example_02 }}" 
+          - "The expression:  {{ '{{' }} example_02 | community.general.json_query('a.b.c.d') {{ '}}' }}"
+          - "The result:      {{ example_02 | community.general.json_query('a.b.c.d') }}"
+      vars:
+        example_02: {"a": {"b": {"c": {"d": "value"}}}}
+
+
+    - name: Basic Expressions Index Expression '[1]'
+      debug:
+        msg:
+          - 'The var:         example_03: ["a", "b", "c", "d", "e", "f"]'
+          - "The expression:  {{ '{{' }} example_03 | community.general.json_query('[1]') {{ '}}' }}"
+          - "The result:      {{ example_03 | community.general.json_query('[1]') }}"
+      vars:
+        example_03: ["a", "b", "c", "d", "e", "f"]

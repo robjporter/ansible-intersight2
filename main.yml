@@ -37,26 +37,44 @@
         <<: *api_info
         server_names: []
       register: server_names
-    - name: Initialize an empty dictionary
-      ansible.builtin.set_fact:
-        server_output: {}
+
     - name: Build Server Output
       ansible.builtin.set_fact:
-        server_output: "{{ server_output | combine({Name: item.Name}) }}"
+        server_output: "{{ server_output | default([]) + [{'Name': item.Name, 'Data': {'Moid': item.Moid}}] }}"
       loop: "{{ server_names.intersight_servers }}"
       loop_control:
         label: All data gathered from Intersight for server {{ item.Name }}
+
     - name: Update intersight_review server details
       ansible.builtin.set_fact:
-        intersight_review: "{{ intersight_review | combine({'server': {'servers': server_output}}, recursive=True) }}"
+        intersight_review: "{{ intersight_review | combine({'intersight': {'server': {'servers': server_output}}}, recursive=True) }}"
+
     - name: Update intersight_review server count
       ansible.builtin.set_fact:
-        intersight_review: "{{ intersight_review | combine({'server': {'count': server_names.intersight_servers | length}}, recursive=True) }}"
+        intersight_review: "{{ intersight_review | combine({'intersight': {'server': {'count': server_names.intersight_servers | length}}}, recursive=True) }}"
 
-    - debug:
-      vars:
-        intersight_review: "{{ intersight_review|dict_merge({'server.servers.blah':'blah'}) }}"
+    - name: Get one record only
+      debug:
+        msg: "{{ intersight_review | community.general.json_query('intersight.server.servers[?Name==`B03-IMM-FI-1-3`]') }}"
 
     - name: Debug
       ansible.builtin.debug:
         msg: "{{ intersight_review }}"
+
+    - name: Debug
+      ansible.builtin.debug:
+        msg: "{{ intersight_review.intersight.server.servers | length }}"
+
+    - name: Display all servers names
+      ansible.builtin.debug:
+        var: item
+      loop: "{{ intersight_review | community.general.json_query('intersight.server.servers[*].Name') }}"
+
+    - name: Display all servers MOIDS
+      ansible.builtin.debug:
+        var: item
+      loop: "{{ intersight_review | community.general.json_query('intersight.server.servers[*].Data.Moid') }}"
+
+    - name: Display all servers
+      debug:
+        msg: "{{ intersight_review | community.general.json_query('intersight.server.servers[?Name==`B03-IMM-FI-1-3`]') | combine({'Data': {'new_key': 'new_value'}}, recursive=True) }}"
