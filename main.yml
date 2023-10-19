@@ -38,17 +38,25 @@
         server_names: []
       register: server_names
     - name: Initialize an empty dictionary
-      set_fact:
+      ansible.builtin.set_fact:
         server_output: {}
     - name: Build Server Output
       ansible.builtin.set_fact:
-        server_output: "{{ server_output | combine({item.Name: item.Moid}) }}"
+        server_output: "{{ server_output | combine({Name: item.Name}) }}"
       loop: "{{ server_names.intersight_servers }}"
+      loop_control:
+        label: All data gathered from Intersight for server {{ item.Name }}
     - name: Update intersight_review server details
-      set_fact:
+      ansible.builtin.set_fact:
         intersight_review: "{{ intersight_review | combine({'server': {'servers': server_output}}, recursive=True) }}"
     - name: Update intersight_review server count
-      set_fact:
+      ansible.builtin.set_fact:
         intersight_review: "{{ intersight_review | combine({'server': {'count': server_names.intersight_servers | length}}, recursive=True) }}"
+
     - debug:
+      vars:
+        intersight_review: "{{ intersight_review|dict_merge({'server.servers.blah':'blah'}) }}"
+
+    - name: Debug
+      ansible.builtin.debug:
         msg: "{{ intersight_review }}"
