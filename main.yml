@@ -49,32 +49,51 @@
       ansible.builtin.set_fact:
         intersight_review: "{{ intersight_review | combine({'intersight': {'server': {'servers': server_output}}}, recursive=True) }}"
 
-    - name: Update intersight_review server count
-      ansible.builtin.set_fact:
-        intersight_review: "{{ intersight_review | combine({'intersight': {'server': {'count': server_names.intersight_servers | length}}}, recursive=True) }}"
-
-    - name: Get one record only
-      debug:
-        msg: "{{ intersight_review | community.general.json_query('intersight.server.servers[?Name==`B03-IMM-FI-1-3`]') }}"
-
-    - name: Debug
+    - name: Get first record
       ansible.builtin.debug:
-        msg: "{{ intersight_review }}"
+        msg: "{{ intersight_review | get_value('intersight.server.servers[1]') }}"
 
-    - name: Debug
+    - name: Get one specifically named record
       ansible.builtin.debug:
-        msg: "{{ intersight_review.intersight.server.servers | length }}"
+        msg: "{{ intersight_review | get_value('intersight.server.servers[Name==`B03-IMM-FI-1-3`]') }}"
+
+    - name: Server Count
+      ansible.builtin.debug:
+        msg: "{{ intersight_review | get_value('intersight.server.servers') | length }}"
 
     - name: Display all servers names
       ansible.builtin.debug:
-        var: item
-      loop: "{{ intersight_review | community.general.json_query('intersight.server.servers[*].Name') }}"
+        msg: "{{ item }}"
+      loop: "{{ intersight_review | get_value('intersight.server.servers[*].Name') }}"
+
 
     - name: Display all servers MOIDS
       ansible.builtin.debug:
         var: item
-      loop: "{{ intersight_review | community.general.json_query('intersight.server.servers[*].Data.Moid') }}"
+      loop: "{{ intersight_review | get_value('intersight.server.servers[*].Data.Moid') }}"
 
-    - name: Display all servers
-      debug:
-        msg: "{{ intersight_review | community.general.json_query('intersight.server.servers[?Name==`B03-IMM-FI-1-3`]') | combine({'Data': {'new_key': 'new_value'}}, recursive=True) }}"
+    - name: Extend a server record
+      ansible.builtin.set_fact:
+        intersight_review: "{{ intersight_review | add_key_value('intersight.server.servers[Name==`Dell-PowerEdge R650-J4OVC3INDUM1V1`].Type', 'Dell') }}"
+
+
+    - name: Get one specifically named record
+      ansible.builtin.debug:
+        msg: "{{ intersight_review | get_value('intersight.server.servers[Name==`Dell-PowerEdge R650-J4OVC3INDUM1V1`]') }}"
+
+    - name: Extend all records - outside Data
+      ansible.builtin.set_fact:
+        intersight_review: "{{ intersight_review | add_key_value('intersight.server.servers[*].added', 'now') }}"
+
+
+    - name: Display record 1
+      ansible.builtin.debug:
+        msg: "{{ intersight_review | get_value('intersight.server.servers[1]') }}"
+
+    - name: Extend all records - inside Data
+      ansible.builtin.set_fact:
+        intersight_review: "{{ intersight_review | add_key_value('intersight.server.servers[Name==`Dell-PowerEdge R650-J4OVC3INDUM1V1`].Data.added', 'now') }}"
+
+    - name: Display record 1
+      ansible.builtin.debug:
+        msg: "{{ intersight_review | get_value('intersight.server.servers[1]') }}"
