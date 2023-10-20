@@ -2,7 +2,6 @@
 import ansible.plugins.filter
 from ansible.utils.display import Display
 import re
-import dpath.util
 
 display = Display()
 

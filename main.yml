@@ -76,23 +76,13 @@
       ansible.builtin.set_fact:
         intersight_review: "{{ intersight_review | add_key_value('intersight.server.servers[Name==`Dell-PowerEdge R650-J4OVC3INDUM1V1`].Type', 'Dell') }}"
 
-
     - name: Get one specifically named record
       ansible.builtin.debug:
         msg: "{{ intersight_review | get_value('intersight.server.servers[Name==`Dell-PowerEdge R650-J4OVC3INDUM1V1`]') }}"
 
     - name: Extend all records - outside Data
       ansible.builtin.set_fact:
-        intersight_review: "{{ intersight_review | add_key_value('intersight.server.servers[*].added', 'now') }}"
-
-
-    - name: Display record 1
-      ansible.builtin.debug:
-        msg: "{{ intersight_review | get_value('intersight.server.servers[1]') }}"
-
-    - name: Extend all records - inside Data
-      ansible.builtin.set_fact:
-        intersight_review: "{{ intersight_review | add_key_value('intersight.server.servers[Name==`Dell-PowerEdge R650-J4OVC3INDUM1V1`].Data.added', 'now') }}"
+        intersight_review: "{{ intersight_review | add_key_value('intersight.server.servers[*].Data.added', 'now') }}"
 
     - name: Display record 1
       ansible.builtin.debug:
