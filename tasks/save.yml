@@ -1,0 +1,16 @@
+- name: Save to Excel
+  ansible.builtin.lineinfile:
+    insertafter: EOF
+    dest: /Users/roporter/Documents/GitHub/ansible-intersight2/test.csv
+    line: "Name, Moid, Memory, CPU Cores, CPU Cores Enabled, CPU Count, Firmware, IP, Memory Speed, Model, Ethernet Count, FC Count, Power State, Serial }}"
+    create: true
+    mode: '0777'
+
+- name: Save to Excel
+  ansible.builtin.lineinfile:
+    insertafter: EOF
+    dest: /Users/roporter/Documents/GitHub/ansible-intersight2/test.csv
+    line: "{{ item.Name, item.Data.Moid, item.Data.Memory, item.Data.CPUCores, item.Data.CPUCoresEnabled, item.Data.CPUCount, item.Data.Firmware, item.Data.IP, item.Data.MemorySpeed, item.Data.Model, item.Data.EthInterfaceCount, item.Data.FCInterfaceCount, item.Data.PowerState, item.Data.Serial }}"
+    create: true
+    mode: '0777'
+  loop: "{{ intersight_review | get_value('intersight.server.servers[*]') }}"

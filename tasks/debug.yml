@@ -1,0 +1,3 @@
+- name: Display full report
+  ansible.builtin.debug:
+    msg: "{{ intersight_review }}"

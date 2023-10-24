@@ -1,0 +1,54 @@
+###############################
+# Adding server count
+###############################
+- name: Find all servers
+  ansible.builtin.set_fact:
+    server_count: "{{ intersight_review | get_value('intersight.server.servers[*]') | length }}"
+
+- name: Add server count to report
+  ansible.builtin.set_fact:
+    intersight_review: "{{ intersight_review | add_key_value('intersight.server.serversCount', server_count) }}"
+
+###############################
+# Add firmware versions and counts to report
+###############################
+- name: Find all firmware versions and counts
+  ansible.builtin.set_fact:
+    firmware_versions: "{{ intersight_review | get_value('intersight.server.servers[*].Data.Firmware') | community.general.counter }}"
+
+- name: Add all firmware versions and counts
+  ansible.builtin.set_fact:
+    intersight_review: "{{ intersight_review | add_key_value('intersight.server.firmwareVersions', firmware_versions) }}"
+
+###############################
+# Add all powerstates to full report
+###############################
+- name: Find all powerstates and counts
+  ansible.builtin.set_fact:
+    power_states: "{{ intersight_review | get_value('intersight.server.servers[*].Data.PowerState') | community.general.counter }}"
+
+- name: Add all powerstates and count
+  ansible.builtin.set_fact:
+    intersight_review: "{{ intersight_review | add_key_value('intersight.server.powerStates', power_states) }}"
+
+###############################
+# Adding Unconfigured server count - no ethernet interfaces
+###############################
+- name: Find ethernet interfaces
+  ansible.builtin.set_fact:
+    ethernet_int_count: "{{ intersight_review | get_value('intersight.server.servers[*].Data') | selectattr('EthInterfaceCount', 'search', '0') | length }}"
+
+- name: Add Unconfigured server count to report
+  ansible.builtin.set_fact:
+    intersight_review: "{{ intersight_review | add_key_value('intersight.server.unconfigured', ethernet_int_count) }}"
+
+###############################
+# Adding Rack server count
+###############################
+- name: Find rack servers
+  ansible.builtin.set_fact:
+    rack_count: "{{ intersight_review | get_value('intersight.server.servers[*].Data') | selectattr('Dn', 'search', 'sys/rack-unit') | length }}"
+
+- name: Add rack server count to report
+  ansible.builtin.set_fact:
+    intersight_review: "{{ intersight_review | add_key_value('intersight.server.rackServers', rack_count) }}"

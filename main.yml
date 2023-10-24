@@ -49,63 +49,19 @@
       ansible.builtin.set_fact:
         intersight_review: "{{ intersight_review | combine({'intersight': {'server': {'servers': server_output}}}, recursive=True) }}"
 
-    - name: Get first record
-      ansible.builtin.debug:
-        msg: "{{ intersight_review | get_value('intersight.server.servers[1]') }}"
-
-    - name: Get one specifically named record
-      ansible.builtin.debug:
-        msg: "{{ intersight_review | get_value('intersight.server.servers[Name==`B03-IMM-FI-1-3`]') }}"
-
-    - name: Server Count
-      ansible.builtin.debug:
-        msg: "{{ intersight_review | get_value('intersight.server.servers') | length }}"
-
-    - name: Display all servers names
-      ansible.builtin.debug:
-        msg: "{{ item }}"
-      loop: "{{ intersight_review | get_value('intersight.server.servers[*].Name') }}"
-
-
-    - name: Display all servers MOIDS
-      ansible.builtin.debug:
-        var: item
-      loop: "{{ intersight_review | get_value('intersight.server.servers[*].Data.Moid') }}"
-
-    - name: Extend a server record
-      ansible.builtin.set_fact:
-        intersight_review: "{{ intersight_review | add_key_value('intersight.server.servers[Name==`Dell-PowerEdge R650-J4OVC3INDUM1V1`].Type', 'Dell') }}"
-
-    - name: Get one specifically named record
-      ansible.builtin.debug:
-        msg: "{{ intersight_review | get_value('intersight.server.servers[Name==`Dell-PowerEdge R650-J4OVC3INDUM1V1`]') }}"
-
-    - name: Extend all records - outside Data
-      ansible.builtin.set_fact:
-        intersight_review: "{{ intersight_review | add_key_value('intersight.server.servers[*].Data.added', 'now') }}"
-
-    - name: Display record 1
-      ansible.builtin.debug:
-        msg: "{{ intersight_review | get_value('intersight.server.servers[1]') }}"
-
-    - name: Display record 1
-      ansible.builtin.debug:
-        msg: "{{ server_names.intersight_servers[0] }}"
-
-    - name: Display all server names
-      ansible.builtin.debug:
-        msg: "{{ intersight_review.intersight.server.servers | map(attribute='Name') | join(', ') }}"
-
-    - name: Display record 1
-      ansible.builtin.debug:
-        msg: "{{ item.Name }}"
-      loop: "{{ intersight_review | get_value('intersight.server.servers[*]') }}"
 
 
 
-    # - name: Save to Excel
-    #   ansible.builtin.lineinfile:
-    #     insertafter: EOF
-    #     dest: ./test.csv
-    #     line: "{{ item.Name }}"
-    #   loop: "{{ intersight_review | get_value('intersight.server.servers[*]') }}"
+
+
+    - name: Process data for summary infomation
+      ansible.builtin.import_tasks: tasks/summary.yml
+      when: intersight_review is defined
+
+    - name: Debug full report
+      ansible.builtin.import_tasks: tasks/debug.yml
+      when: intersight_review is defined
+
+    # - name: Save processed data to XLSX file
+    #   ansible.builtin.import_tasks: tasks/save.yml
+    #   when: intersight_review is defined
