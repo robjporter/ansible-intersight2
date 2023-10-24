@@ -40,7 +40,7 @@
 
     - name: Build Server Output
       ansible.builtin.set_fact:
-        server_output: "{{ server_output | default([]) + [{'Name': item.Name, 'Data': {'Moid': item.Moid, 'Memory': item.AvailableMemory, 'CPUCores': item.NumCpuCores, 'CPUCoresEnabled': item.NumCpuCoresEnabled, 'CPUCount': item.NumCpus, 'DN': item.Dn, 'Firmware': item.Firmware, 'IP': item.Ipv4Address, 'MemorySpeed': item.MemorySpeed, 'Model': item.Model, 'EthInterfaceCount': item.NumEthHostInterfaces, 'FCInterfaceCount': item.NumFcHostInterfaces, 'PowerState': item.OperPowerState, 'Serial': item.Serial}}] }}"
+        server_output: "{{ server_output | default([]) + [{'Name': item.Name, 'Data': {'Moid': item.Moid, 'Memory': item.AvailableMemory, 'CPUCores': item.NumCpuCores, 'CPUCoresEnabled': item.NumCpuCoresEnabled, 'CPUCount': item.NumCpus, 'Dn': item.Dn, 'Firmware': item.Firmware, 'IP': item.Ipv4Address, 'MemorySpeed': item.MemorySpeed, 'Model': item.Model, 'EthInterfaceCount': item.NumEthHostInterfaces, 'FCInterfaceCount': item.NumFcHostInterfaces, 'PowerState': item.OperPowerState, 'Serial': item.Serial}}] }}"
       loop: "{{ server_names.intersight_servers }}"
       loop_control:
         label: All data gathered from Intersight for server {{ item.Name }}
@@ -91,3 +91,21 @@
     - name: Display record 1
       ansible.builtin.debug:
         msg: "{{ server_names.intersight_servers[0] }}"
+
+    - name: Display all server names
+      ansible.builtin.debug:
+        msg: "{{ intersight_review.intersight.server.servers | map(attribute='Name') | join(', ') }}"
+
+    - name: Display record 1
+      ansible.builtin.debug:
+        msg: "{{ item.Name }}"
+      loop: "{{ intersight_review | get_value('intersight.server.servers[*]') }}"
+
+
+
+    # - name: Save to Excel
+    #   ansible.builtin.lineinfile:
+    #     insertafter: EOF
+    #     dest: ./test.csv
+    #     line: "{{ item.Name }}"
+    #   loop: "{{ intersight_review | get_value('intersight.server.servers[*]') }}"

@@ -159,7 +159,10 @@ def get_value(data, query):
         if key == '*':  # Check for wildcard operator
             # If wildcard is encountered, iterate over all items in the current array
             remaining_query = '.'.join(keys[i + 1:])
-            data = [get_value(item, remaining_query) for item in data]
+            if remaining_query:
+                data = [get_value(item, remaining_query) for item in data]
+            else:
+                return data
             break  # Exit the loop as the remaining query will be handled in recursive calls
         elif '==' in key:
             data = evaluate_condition(data, key)
@@ -168,6 +171,24 @@ def get_value(data, query):
         else:
             data = data.get(key, {})
     return data
+
+# def get_value(data, query):
+#     keys = re.split(r'\.|\[|\]', query)
+#     for i, key in enumerate(keys):
+#         if not key:
+#             continue
+#         if key == '*':  # Check for wildcard operator
+#             # If wildcard is encountered, iterate over all items in the current array
+#             remaining_query = '.'.join(keys[i + 1:])
+#             data = [get_value(item, remaining_query) for item in data]
+#             break  # Exit the loop as the remaining query will be handled in recursive calls
+#         elif '==' in key:
+#             data = evaluate_condition(data, key)
+#         elif re.match(r'\d+', key):
+#             data = data[int(key)]
+#         else:
+#             data = data.get(key, {})
+#     return data
 
 
 def merge_obj(current_obj, key, new_obj):
