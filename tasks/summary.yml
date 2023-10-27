@@ -21,6 +21,17 @@
     intersight_review: "{{ intersight_review | add_key_value('intersight.server.firmwareVersions', firmware_versions) }}"
 
 ###############################
+# Add Serial numbers to full report
+###############################
+- name: Find all serial numbers
+  ansible.builtin.set_fact:
+    serial_numbers: "{{ intersight_review | get_value('intersight.server.servers[*].Data.Serial') | list }}"
+
+- name: Add all serial numbers to full report
+  ansible.builtin.set_fact:
+    intersight_review: "{{ intersight_review | add_key_value('intersight.server.serialNumbers', serial_numbers) }}"
+
+###############################
 # Add all powerstates to full report
 ###############################
 - name: Find all powerstates and counts
