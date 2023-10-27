@@ -49,7 +49,13 @@
       ansible.builtin.set_fact:
         intersight_review: "{{ intersight_review | combine({'intersight': {'server': {'servers': server_output}}}, recursive=True) }}"
 
-
+    - name:  Get HCL status
+      vars:
+        task_api_info: "{{ api_info }}"
+      ansible.builtin.include_tasks: tasks/hcl.yml
+      loop: "{{ (intersight_review | get_value('intersight.server.servers[*]'))[:1] }}"
+      # loop: "{{ intersight_review | get_value('intersight.server.servers[*]') }}"
+      when: intersight_review is defined
 
 
 

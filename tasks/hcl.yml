@@ -1,0 +1,143 @@
+- name: Create HCL Response
+  ansible.builtin.set_fact:
+    hcl_resp: {}
+
+- name: Create HCL Object
+  ansible.builtin.set_fact:
+    hcl_object: {}
+
+- name: Create HCL Object
+  ansible.builtin.set_fact:
+    dynamic_key: ''
+
+- name: DEBUG
+  debug:
+    msg: "{{ item.Name }}"
+
+- name: Fetching HCL info for "{{ item.Name }}"
+  ignore_errors: true
+  cisco.intersight.intersight_rest_api:
+    api_private_key: "{{ api_info.api_private_key | default(omit) }}"
+    api_key_id: "{{ api_info.api_key_id | default(omit) }}"
+    api_uri: "{{ api_info.api_uri | default(omit) }}"
+    resource_path: /cond/HclStatuses
+    query_params:
+      $filter: "ManagedObject.Moid eq '{{ item.Data.Moid }}'"
+  delegate_to: localhost
+  register: hcl_resp
+  when:
+    - item is defined
+
+- name: Extend HCL object with Status
+  ansible.builtin.set_fact:
+    hcl_object: "{{ hcl_object | combine({ 'HardwareStatus' : hcl_resp.api_response.HardwareStatus}) }}"
+  when: hcl_resp is defined and hcl_resp.api_response is defined
+
+- name: Extend HCL object with OS Vendor
+  ansible.builtin.set_fact:
+    hcl_object: "{{ hcl_object | combine({'OS_Vendor': hcl_resp.api_response.HclOsVendor}) }}"
+  when: hcl_resp is defined and hcl_resp.api_response is defined
+
+- name: Extend HCL object with OS Version
+  ansible.builtin.set_fact:
+    hcl_object: "{{ hcl_object | combine ({ 'OS_Version' : hcl_resp.api_response.HclOsVersion }) }}"
+  when: hcl_resp is defined and hcl_resp.api_response is defined
+
+- name: Set the dynamic key
+  ansible.builtin.set_fact:
+    dynamic_key: "intersight.server.servers[Name==`{{ item.Name }}`].Data.HCL"
+
+- name: DEBUG
+  debug:
+    msg: "{{ dynamic_key }}"
+
+- name: Extend "{{ item.Name }}" record with HCL data
+  ansible.builtin.set_fact:
+    intersight_review: "{{ intersight_review | add_key_value(dynamic_key, hcl_object) }}"
+  when: hcl_object | length > 0
+
+# ok: [localhost] => {
+#     "msg": {
+#         "api_response": {
+#             "AccountMoid": "5f57b3d87564612d33d6eecd",
+#             "Ancestors": [],
+#             "ClassId": "cond.HclStatus",
+#             "ComponentStatus": "Not-Evaluated",
+#             "CreateTime": "2023-10-27T14:33:43.655Z",
+#             "Details": [
+#                 {
+#                     "ClassId": "mo.MoRef",
+#                     "Moid": "653bca8773736f3101aa7072",
+#                     "ObjectType": "cond.HclStatusDetail",
+#                     "link": "https://www.intersight.com/api/v1/cond/HclStatusDetails/653bca8773736f3101aa7072"
+#                 },
+#                 {
+#                     "ClassId": "mo.MoRef",
+#                     "Moid": "653bcac373736f3101aa8836",
+#                     "ObjectType": "cond.HclStatusDetail",
+#                     "link": "https://www.intersight.com/api/v1/cond/HclStatusDetails/653bcac373736f3101aa8836"
+#                 },
+#                 {
+#                     "ClassId": "mo.MoRef",
+#                     "Moid": "653bcac373736f3101aa8837",
+#                     "ObjectType": "cond.HclStatusDetail",
+#                     "link": "https://www.intersight.com/api/v1/cond/HclStatusDetails/653bcac373736f3101aa8837"
+#                 },
+#                 {
+#                     "ClassId": "mo.MoRef",
+#                     "Moid": "653bcac373736f3101aa8838",
+#                     "ObjectType": "cond.HclStatusDetail",
+#                     "link": "https://www.intersight.com/api/v1/cond/HclStatusDetails/653bcac373736f3101aa8838"
+#                 }
+#             ],
+#             "DomainGroupMoid": "5f57b3d87564612d33d6eece",
+#             "HardwareStatus": "Validated",
+#             "HclFirmwareVersion": "4.2(3)",
+#             "HclModel": "HXAF220C-M5SX",
+#             "HclOsVendor": "",
+#             "HclOsVersion": "",
+#             "HclProcessor": "Intel Xeon Processor Scalable Family",
+#             "InvFirmwareVersion": "4.2(3g)C",
+#             "InvModel": "HXAF220C-M5SX",
+#             "InvOsVendor": "",
+#             "InvOsVersion": " ",
+#             "InvProcessor": "Intel(R) Xeon(R) Gold 5220R CPU @ 2.20GHz",
+#             "ManagedObject": {
+#                 "ClassId": "mo.MoRef",
+#                 "Moid": "653bca4176752d3001af1d3f",
+#                 "ObjectType": "compute.RackUnit",
+#                 "link": "https://www.intersight.com/api/v1/compute/RackUnits/653bca4176752d3001af1d3f"
+#             },
+#             "ModTime": "2023-10-27T14:37:07.27Z",
+#             "Moid": "653bca4773736f3101aa595b",
+#             "ObjectType": "cond.HclStatus",
+#             "Owners": [
+#                 "5f57b3d87564612d33d6eecd",
+#                 "6537d0756f7261360132d0ae"
+#             ],
+#             "PermissionResources": [
+#                 {
+#                     "ClassId": "mo.MoRef",
+#                     "Moid": "5f57b3da6972652d311f992a",
+#                     "ObjectType": "organization.Organization",
+#                     "link": "https://www.intersight.com/api/v1/organization/Organizations/5f57b3da6972652d311f992a"
+#                 }
+#             ],
+#             "Reason": "Missing-Os-Info",
+#             "RegisteredDevice": {
+#                 "ClassId": "mo.MoRef",
+#                 "Moid": "6537d0756f7261360132d0ae",
+#                 "ObjectType": "asset.DeviceRegistration",
+#                 "link": "https://www.intersight.com/api/v1/asset/DeviceRegistrations/6537d0756f7261360132d0ae"
+#             },
+#             "ServerReason": "Missing-Os-Driver-Info",
+#             "SharedScope": "",
+#             "SoftwareStatus": "Incomplete",
+#             "Status": "Incomplete",
+#             "Tags": []
+#         },
+#         "changed": false,
+#         "failed": false,
+#         "trace_id": "DPD1VIK7nShVdGI3ggk5VYSx9MJqqGb055XbfpGlApUScNTbyFz4dQ=="
+#     }
+# }
