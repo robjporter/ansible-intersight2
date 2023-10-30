@@ -1,60 +1,98 @@
-- name: Create HCL Response
-  ansible.builtin.set_fact:
-    hcl_resp: {}
+- block:
+    - name: Fetching HCL info for "{{ item.Name }}"
+      ignore_errors: true
+      cisco.intersight.intersight_rest_api:
+        api_private_key: "{{ api_info.api_private_key | default(omit) }}"
+        api_key_id: "{{ api_info.api_key_id | default(omit) }}"
+        api_uri: "{{ api_info.api_uri | default(omit) }}"
+        resource_path: /cond/HclStatuses
+        query_params:
+          $filter: "ManagedObject.Moid eq '{{ item.Data.Moid }}'"
+      delegate_to: localhost
+      register: hcl_resp
+      when: item is defined
 
-- name: Create HCL Object
-  ansible.builtin.set_fact:
+    - block:
+      - name: Extend HCL object with various attributes
+        ansible.builtin.set_fact:
+          hcl_object: "{{ hcl_object | default({}) | add_key_value(item2.key, hcl_resp.api_response['' ~ item2.value]) }}"
+        loop:
+          - { key: 'HardwareStatus', value: 'HardwareStatus' }
+          - { key: 'OS_Vendor', value: 'HclOsVendor' }
+          - { key: 'OS_Version', value: 'HclOsVersion' }
+        loop_control:
+          loop_var: item2
+        when: hcl_resp is defined and hcl_resp.api_response is defined
+
+      - name: Set the dynamic key
+        set_fact:
+          dynamic_key: "intersight.server.servers[Name==|{{ item.Name }}|].Data.HCL"
+
+      # - name: Debug
+      #   debug:
+      #     msg: "SERVER: {{ dynamic_key }} OBJECT: {{ hcl_object }}"
+
+    - name: Extend "{{ item.Name }}" record with HCL data
+      set_fact:
+        intersight_review: "{{ intersight_review | add_key_value('intersight.server.servers[Name==|' ~ item.Name ~ '|].Data.HCL', hcl_object) }}"
+      when: hcl_object | length > 0
+
+  vars:
     hcl_object: {}
 
-- name: Create HCL Object
-  ansible.builtin.set_fact:
-    dynamic_key: ''
+# - name: Create HCL Response
+#   ansible.builtin.set_fact:
+#     hcl_resp: {}
 
-- name: DEBUG
-  debug:
-    msg: "{{ item.Name }}"
+# - name: Create HCL Object
+#   ansible.builtin.set_fact:
+#     hcl_object: {}
 
-- name: Fetching HCL info for "{{ item.Name }}"
-  ignore_errors: true
-  cisco.intersight.intersight_rest_api:
-    api_private_key: "{{ api_info.api_private_key | default(omit) }}"
-    api_key_id: "{{ api_info.api_key_id | default(omit) }}"
-    api_uri: "{{ api_info.api_uri | default(omit) }}"
-    resource_path: /cond/HclStatuses
-    query_params:
-      $filter: "ManagedObject.Moid eq '{{ item.Data.Moid }}'"
-  delegate_to: localhost
-  register: hcl_resp
-  when:
-    - item is defined
+# - name: Create HCL Object
+#   ansible.builtin.set_fact:
+#     dynamic_key: ''
 
-- name: Extend HCL object with Status
-  ansible.builtin.set_fact:
-    hcl_object: "{{ hcl_object | combine({ 'HardwareStatus' : hcl_resp.api_response.HardwareStatus}) }}"
-  when: hcl_resp is defined and hcl_resp.api_response is defined
+# - name: Fetching HCL info for "{{ item.Name }}"
+#   ignore_errors: true
+#   cisco.intersight.intersight_rest_api:
+#     api_private_key: "{{ api_info.api_private_key | default(omit) }}"
+#     api_key_id: "{{ api_info.api_key_id | default(omit) }}"
+#     api_uri: "{{ api_info.api_uri | default(omit) }}"
+#     resource_path: /cond/HclStatuses
+#     query_params:
+#       $filter: "ManagedObject.Moid eq '{{ item.Data.Moid }}'"
+#   delegate_to: localhost
+#   register: hcl_resp
+#   when:
+#     - item is defined
 
-- name: Extend HCL object with OS Vendor
-  ansible.builtin.set_fact:
-    hcl_object: "{{ hcl_object | combine({'OS_Vendor': hcl_resp.api_response.HclOsVendor}) }}"
-  when: hcl_resp is defined and hcl_resp.api_response is defined
+# - name: DEBUG
+#   debug:
+#     msg: "{{ hcl_resp }}"
 
-- name: Extend HCL object with OS Version
-  ansible.builtin.set_fact:
-    hcl_object: "{{ hcl_object | combine ({ 'OS_Version' : hcl_resp.api_response.HclOsVersion }) }}"
-  when: hcl_resp is defined and hcl_resp.api_response is defined
+# - name: Extend HCL object with Status
+#   ansible.builtin.set_fact:
+#     hcl_object: "{{ hcl_object | default({}) | combine({ 'HardwareStatus' : hcl_resp.api_response.HardwareStatus}) }}"
+#   when: hcl_resp is defined and hcl_resp.api_response is defined
 
-- name: Set the dynamic key
-  ansible.builtin.set_fact:
-    dynamic_key: "intersight.server.servers[Name==`{{ item.Name }}`].Data.HCL"
+# - name: Extend HCL object with OS Vendor
+#   ansible.builtin.set_fact:
+#     hcl_object: "{{ hcl_object | default({}) | combine({'OS_Vendor': hcl_resp.api_response.HclOsVendor}) }}"
+#   when: hcl_resp is defined and hcl_resp.api_response is defined
 
-- name: DEBUG
-  debug:
-    msg: "{{ dynamic_key }}"
+# - name: Extend HCL object with OS Version
+#   ansible.builtin.set_fact:
+#     hcl_object: "{{ hcl_object | default({}) | combine ({ 'OS_Version' : hcl_resp.api_response.HclOsVersion }) }}"
+#   when: hcl_resp is defined and hcl_resp.api_response is defined
 
-- name: Extend "{{ item.Name }}" record with HCL data
-  ansible.builtin.set_fact:
-    intersight_review: "{{ intersight_review | add_key_value(dynamic_key, hcl_object) }}"
-  when: hcl_object | length > 0
+# - name: Set the dynamic key
+#   ansible.builtin.set_fact:
+#     dynamic_key: "intersight.server.servers[Name==`{{ item.Name }}`].Data.HCL"
+
+# - name: Extend "{{ item.Name }}" record with HCL data
+#   ansible.builtin.set_fact:
+#     intersight_review: "{{ intersight_review | add_key_value(dynamic_key, hcl_object) }}"
+#   when: hcl_object | length > 0
 
 # ok: [localhost] => {
 #     "msg": {

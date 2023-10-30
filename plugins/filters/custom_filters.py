@@ -55,21 +55,6 @@ def nested_set(dic, keys, value):
         dic[last_key] = value  # Set value for non-indexed keys
 
 
-# def nested_set(dic, keys, value):
-#     for key in keys[:-1]:
-#         if re.match(r'.+\[\d+\]$', key):  # If key has an index e.g., b[1]
-#             key, index = re.match(r'(.+)\[(\d+)\]$', key).groups()
-#             dic = dic.setdefault(key, [{}])[int(index)]
-#         else:
-#             dic = dic.setdefault(key, {})
-#     last_key = keys[-1]
-#     if re.match(r'.+\[\d+\]$', last_key):
-#         last_key, index = re.match(r'(.+)\[(\d+)\]$', last_key).groups()
-#         dic[last_key][int(index)] = value
-#     else:
-#         dic[last_key] = value
-
-
 def nested_merge(dic, keys, new_obj):
     for key in keys[:-1]:
         if re.match(r'.+\[\d+\]$', key):
@@ -99,18 +84,6 @@ def evaluate_condition(data, condition):
     return [item for item in data if item.get(key) == value]
 
 
-# def parse_query(query):
-#     # Parse the query into a structured format
-#     keys = []
-#     for key in re.split(r'\.', query):
-#         match = re.match(r'(.+)\[(\d+)\]$', key)
-#         if match:
-#             key, index = match.groups()
-#             keys.append((key, int(index)))
-#         else:
-#             keys.append((key, None))
-#     return keys
-
 def parse_query(query):
     # Split the query by '.' to get the keys
     keys = query.split('.')
@@ -123,9 +96,11 @@ def recursive_set(data, keys, value):
     key = keys[0]
 
     # Check if the key contains an index or a condition for a list item
-    match = re.match(r'(.+)\[(\*|Name==`(.+)`)\]$', key, re.IGNORECASE)
+    match = re.match(r'(.+)\[(\*|Name==\|(.+)\|)\]$', key, re.IGNORECASE)
     if match:
         key, star, condition_value = match.groups()
+        print(f"Debug - key: {key}, condition_value: {condition_value}")
+
         if not isinstance(data.get(key), list):
             data[key] = []
         if star:
@@ -137,8 +112,8 @@ def recursive_set(data, keys, value):
                 if isinstance(item, dict) and item.get('Name') == condition_value:
                     recursive_set(item, keys[1:], value)
                     return
-            new_item = {'Name': condition_value}
-            data[key].append(new_item)
+            # new_item = {'Name': condition_value}
+            # data[key].append(new_item)
     else:
         if len(keys) == 1:
             data[key] = value
@@ -171,24 +146,6 @@ def get_value(data, query):
         else:
             data = data.get(key, {})
     return data
-
-# def get_value(data, query):
-#     keys = re.split(r'\.|\[|\]', query)
-#     for i, key in enumerate(keys):
-#         if not key:
-#             continue
-#         if key == '*':  # Check for wildcard operator
-#             # If wildcard is encountered, iterate over all items in the current array
-#             remaining_query = '.'.join(keys[i + 1:])
-#             data = [get_value(item, remaining_query) for item in data]
-#             break  # Exit the loop as the remaining query will be handled in recursive calls
-#         elif '==' in key:
-#             data = evaluate_condition(data, key)
-#         elif re.match(r'\d+', key):
-#             data = data[int(key)]
-#         else:
-#             data = data.get(key, {})
-#     return data
 
 
 def merge_obj(current_obj, key, new_obj):
